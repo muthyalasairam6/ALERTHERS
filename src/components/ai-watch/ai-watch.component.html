@@ -1,0 +1,175 @@
+<div class="h-full w-full bg-slate-900 text-white flex flex-col justify-between items-center p-6 relative overflow-hidden font-sans">
+  
+  <header class="w-full text-center mt-8 z-10 relative">
+    <button (click)="stopMonitoring()" class="absolute left-0 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors">
+      <i class="fa-solid fa-arrow-left text-2xl"></i>
+    </button>
+    <h1 class="text-3xl font-bold">AI Watch</h1>
+    <p class="text-slate-400 mt-2">Personal safety monitoring</p>
+  </header>
+
+  <div class="flex-grow flex flex-col items-center justify-center text-center z-10 -mt-10">
+    @if (permissionState() === 'granted' && isMonitoring()) {
+      <!-- Monitoring State -->
+      <div class="relative w-64 h-64 flex items-center justify-center">
+        <div class="absolute inset-0 bg-indigo-500/10 rounded-full animate-sonar-ring [animation-delay:0s]"></div>
+        <div class="absolute inset-0 bg-indigo-500/10 rounded-full animate-sonar-ring [animation-delay:1s]"></div>
+        <div class="absolute inset-0 bg-indigo-500/10 rounded-full animate-sonar-ring [animation-delay:2s]"></div>
+        <div class="w-48 h-48 rounded-full bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+          <i class="fa-solid fa-shield-heart text-7xl text-white animate-pulse"></i>
+        </div>
+      </div>
+      <h2 class="text-2xl font-semibold mt-8">Actively Monitoring</h2>
+      <p class="text-slate-400 max-w-sm mx-auto mt-2">
+        Aura is listening for signs of distress in your surroundings.
+      </p>
+    } @else if (permissionState() === 'prompt') {
+      <!-- Prompt State -->
+      <div class="relative w-64 h-64 flex items-center justify-center">
+        <div class="w-48 h-48 rounded-full bg-slate-700 flex items-center justify-center">
+          <div class="w-full h-full rounded-full animate-pulse bg-slate-600/50 flex items-center justify-center">
+            <i class="fa-solid fa-microphone text-7xl text-slate-400"></i>
+          </div>
+        </div>
+      </div>
+      <h2 class="text-2xl font-semibold mt-8">Permission Required</h2>
+      <p class="text-slate-400 max-w-sm mx-auto mt-2">
+        Please allow microphone access to start monitoring your safety.
+      </p>
+    } @else {
+      <!-- Denied State -->
+      <div class="relative w-64 h-64 flex items-center justify-center">
+        <div class="absolute inset-0 bg-red-500/10 rounded-full animate-sonar-ring [animation-delay:0s]"></div>
+        <div class="w-48 h-48 rounded-full bg-red-900/50 flex items-center justify-center">
+          <i class="fa-solid fa-circle-exclamation text-7xl text-red-400"></i>
+        </div>
+      </div>
+      <h2 class="text-2xl font-semibold mt-8">Microphone Access Denied</h2>
+      <p class="text-slate-400 max-w-sm mx-auto mt-2">
+        AI Watch cannot function without microphone access. Please enable it in your device or browser settings.
+      </p>
+      <button (click)="startMonitoring()" class="mt-6 px-6 py-2 bg-indigo-600 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+        Retry Permission
+      </button>
+    }
+  </div>
+  
+  <footer class="w-full max-w-md mb-4 z-10">
+    @if(isMonitoring()){
+      <div class="w-full text-center mb-4">
+        @switch (manualRecordingState()) {
+          @case ('idle') {
+            <button 
+                (mousedown)="startManualRecord()" (mouseup)="stopManualRecord()" (mouseleave)="stopManualRecord()" 
+                (touchstart)="startManualRecord()" (touchend)="stopManualRecord()"
+                class="w-full bg-white/10 backdrop-blur-sm text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-white/20 active:bg-white/30 active:scale-95 transition-all text-base flex items-center justify-center">
+              <i class="fa-solid fa-microphone mr-3"></i>
+              Hold to Record a Clip for SOS
+            </button>
+          }
+          @case ('recording') {
+            <div class="w-full bg-red-600/80 backdrop-blur-sm text-white font-bold py-3 px-6 rounded-xl shadow-lg flex items-center justify-center">
+              <i class="fa-solid fa-circle text-red-400 animate-pulse mr-3"></i>
+              Recording... (Max 10s)
+            </div>
+          }
+          @case ('recorded') {
+            <div class="w-full bg-green-600/80 backdrop-blur-sm text-white p-3 rounded-xl shadow-lg flex items-center justify-between">
+              <span class="font-semibold ml-2"><i class="fa-solid fa-check-circle mr-2"></i>Clip Recorded for SOS</span>
+              <button (click)="discardManualRecord()" class="text-white/80 hover:text-white font-bold py-1 px-3 rounded-md bg-white/20 hover:bg-white/30">
+                Discard
+              </button>
+            </div>
+          }
+        }
+      </div>
+      <button (click)="stopMonitoring()" class="w-full bg-red-600/80 backdrop-blur-sm text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-red-600 active:scale-95 transition-all text-lg">
+        Stop Monitoring
+      </button>
+    } @else {
+      <button (click)="stopMonitoring()" class="w-full bg-slate-600/80 backdrop-blur-sm text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-slate-700 active:scale-95 transition-all text-lg">
+        Go Back
+      </button>
+    }
+  </footer>
+
+  <!-- Risk Alert Modal -->
+  @if (isRiskAlertShowing()) {
+    <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-auto border-4 border-yellow-400">
+        <i class="fa-solid fa-triangle-exclamation text-6xl text-yellow-400 animate-pulse"></i>
+        <h2 class="text-3xl font-bold mt-5 text-slate-800 dark:text-slate-100">Potential Risk Detected</h2>
+        <p class="text-slate-600 dark:text-slate-300 mt-2 mb-4">
+          AI detected: <strong class="dark:text-white">{{ riskReason() }}</strong>
+        </p>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">
+          Activating SOS in {{ alertCountdown() }} seconds...
+        </p>
+        <div class="flex flex-col gap-4 mt-6">
+           <button (click)="confirmSosFromAlert()" class="w-full bg-red-600 text-white font-bold py-4 px-4 rounded-lg hover:bg-red-700 transition-colors text-lg">
+            SEND SOS ALERT NOW
+          </button>
+          <button (click)="dismissRiskAlert()" class="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3 px-4 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+            I Am Safe
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- SOS Modals -->
+  @if (isAlertSent()) {
+    <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl text-center max-w-sm mx-4">
+        @if (contactService.contacts().length > 0) {
+          <i class="fa-solid fa-tower-broadcast text-5xl text-red-500 animate-pulse"></i>
+          <h2 class="text-2xl font-bold mt-4 text-slate-800 dark:text-slate-100">Sending SOS Alert</h2>
+          <p class="text-slate-600 dark:text-slate-300 mt-2">
+            Alerting <strong class="dark:text-white">{{ sosTarget() }}</strong> and sharing your location in...
+          </p>
+        } @else {
+          <i class="fa-solid fa-phone-volume text-5xl text-red-500 animate-pulse"></i>
+          <h2 class="text-2xl font-bold mt-4 text-slate-800 dark:text-slate-100">Initiating Emergency Call</h2>
+          <p class="text-slate-600 dark:text-slate-300 mt-2">
+            Calling <strong class="dark:text-white">{{ sosTarget() }}</strong> in...
+          </p>
+        }
+        <p class="text-6xl font-bold my-4 text-slate-800 dark:text-slate-100">{{ sosCountdown() }}</p>
+        <button (click)="cancelSos()" class="w-full bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 font-bold py-3 px-4 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (isSosConfirmationShowing()) {
+    <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-auto border-4 border-green-500">
+        <i class="fa-solid fa-circle-check text-6xl text-green-500"></i>
+        <h2 class="text-3xl font-bold mt-5 text-slate-800 dark:text-slate-100">Alert Prepared</h2>
+        <p class="text-slate-600 dark:text-slate-300 mt-2 mb-6">
+          Your SOS message and location are ready. Please open your mail app to select your contacts and send the alert.
+        </p>
+        <button (click)="dismissSosConfirmation()" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">
+          Okay
+        </button>
+      </div>
+    </div>
+  }
+
+  <style>
+    @keyframes sonar-ring {
+      0% {
+        transform: scale(0.3);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(1.5);
+        opacity: 0;
+      }
+    }
+    .animate-sonar-ring {
+      animation: sonar-ring 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+  </style>
+</div>

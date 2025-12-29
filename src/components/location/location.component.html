@@ -1,0 +1,287 @@
+<div class="relative w-full h-full bg-slate-200 dark:bg-slate-800">
+  
+  <div #map id="map" class="w-full h-full z-0"></div>
+
+  @if (status() === 'loading') {
+    <div class="absolute inset-0 bg-slate-200/80 dark:bg-slate-800/80 flex flex-col items-center justify-center z-10 text-center p-4">
+      <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-indigo-500"></div>
+      <p class="mt-4 text-lg font-semibold text-slate-700 dark:text-slate-300">Finding your location...</p>
+    </div>
+  }
+  @if (status() === 'error') {
+    <div class="absolute inset-0 bg-red-50 dark:bg-red-900/50 flex flex-col items-center justify-center z-10 text-center p-4">
+      <i class="fa-solid fa-circle-exclamation text-5xl text-red-500"></i>
+      <p class="mt-4 text-lg font-bold text-red-700 dark:text-red-300">Location Error</p>
+      <p class="mt-2 text-red-600 dark:text-red-300 max-w-sm">{{ errorMessage() }}</p>
+      <button (click)="retry()" class="mt-6 px-6 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">
+        Try Again
+      </button>
+    </div>
+  }
+
+  @if (status() === 'success') {
+    <div class="absolute bottom-6 left-6 z-10">
+      <button (click)="sosActivated()" 
+              class="w-20 h-20 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 active:scale-95 transition-all flex items-center justify-center animate-pulse" title="SOS Alert">
+        <span class="text-2xl font-bold">SOS</span>
+      </button>
+    </div>
+
+    <div class="absolute bottom-6 right-6 z-10 flex flex-col gap-4">
+      <button (click)="openZoneManager()"
+              class="w-16 h-16 bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-full shadow-lg hover:bg-slate-100 active:scale-95 transition-all flex items-center justify-center" title="Manage Safety Zones">
+        <i class="fa-solid fa-draw-polygon text-2xl"></i>
+      </button>
+      @if (contacts().length > 0) {
+        <button (click)="openRecipientSelector()" 
+                class="w-16 h-16 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center" title="Share Location">
+          <i class="fa-solid fa-paper-plane text-2xl"></i>
+        </button>
+      } @else {
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg max-w-xs text-center">
+          <p class="text-sm text-slate-600 dark:text-slate-300">Add an emergency contact to share your location.</p>
+        </div>
+      }
+    </div>
+  }
+  
+  <!-- Share Confirmation Toast -->
+  @if(isSharing()) {
+    <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-20 text-center">
+      <i class="fa-solid fa-check-circle mr-2"></i>
+      Location shared successfully!
+    </div>
+  }
+
+  <!-- Recipient Selector Modal -->
+  @if(showRecipientSelector()) {
+    <div class="absolute inset-0 bg-black/60 flex items-end justify-center z-30 sm:items-center">
+      <div class="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
+        <header class="p-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">Share Location With...</h2>
+        </header>
+        <div class="p-6 overflow-y-auto">
+          <div class="space-y-4">
+            @if (groups().length > 0) {
+              <div>
+                <h3 class="font-semibold text-slate-600 dark:text-slate-300 mb-2">Groups</h3>
+                <div class="space-y-2">
+                  @for(group of groups(); track group.id) {
+                    <label class="flex items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700">
+                      <input type="checkbox" 
+                            [checked]="selectedGroupIds().has(group.id)" 
+                            (change)="toggleSelection('group', group.id)"
+                            class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
+                      <span class="ml-3 font-medium text-slate-800 dark:text-slate-200">{{ group.name }}</span>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+            @if (contacts().length > 0) {
+              <div>
+                <h3 class="font-semibold text-slate-600 dark:text-slate-300 mb-2 pt-2">Contacts</h3>
+                <div class="space-y-2">
+                  @for(contact of contacts(); track contact.id) {
+                    <label class="flex items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700">
+                      <input type="checkbox" 
+                            [checked]="selectedContactIds().has(contact.id)" 
+                            (change)="toggleSelection('contact', contact.id)"
+                            class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
+                      <span class="ml-3 font-medium text-slate-800 dark:text-slate-200">{{ contact.name }}</span>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+            @if (contacts().length === 0 && groups().length === 0) {
+                <div class="text-center p-8 text-slate-500 dark:text-slate-400">
+                  <i class="fa-solid fa-users-slash text-4xl mb-4"></i>
+                  <p>No contacts or groups available.</p>
+                  <p class="text-sm">Go to the Contacts tab to add some.</p>
+                </div>
+            }
+          </div>
+        </div>
+        <footer class="p-4 border-t border-slate-200 dark:border-slate-700 flex gap-2">
+          <button (click)="closeRecipientSelector()" class="w-full py-3 bg-slate-200 dark:bg-slate-600 font-bold rounded-lg">Cancel</button>
+          <button (click)="prepareToShare()" [disabled]="selectedContactIds().size === 0 && selectedGroupIds().size === 0" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg disabled:opacity-50">Share</button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- Share Confirmation Dialog -->
+  @if(showShareConfirmation()) {
+     <div class="absolute inset-0 bg-black/60 flex items-center justify-center z-40 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+          <i class="fa-solid fa-circle-info text-4xl text-indigo-500"></i>
+          <h2 class="text-2xl font-bold my-3">Confirm Share</h2>
+          <p class="text-slate-600 dark:text-slate-300">
+            This will open your default mail app to send your live location to <strong>{{ getSharingRecipientNames() }}</strong>.
+          </p>
+          <div class="flex gap-4 mt-6">
+            <button (click)="cancelShare()" class="w-full py-3 bg-slate-200 dark:bg-slate-600 font-bold rounded-lg">Cancel</button>
+            <button (click)="confirmShareLocation()" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg">Proceed</button>
+          </div>
+        </div>
+     </div>
+  }
+
+  <!-- Safety Zone Event Toast -->
+  @if(zoneEvent(); as event) {
+    <div class="absolute bottom-24 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg z-20 text-center animate-fade-in-out">
+      <i class="fa-solid fa-bell mr-2"></i>
+      Alert sent: You've {{ event.event === 'enter' ? 'entered' : 'left' }} '{{ event.zone.name }}'.
+    </div>
+  }
+
+  <!-- Safety Zone Manager Modal -->
+  @if(isManagingZones()) {
+    <div class="absolute inset-0 bg-black/60 flex items-end justify-center z-30 sm:items-center">
+      <div class="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
+        <header class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shrink-0">
+          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">
+            @if(editingZone()) {
+              {{ editingZone()?.id && !editingZone()?.tempId ? 'Edit' : 'Add' }} Safety Zone
+            } @else {
+              Safety Zones
+            }
+          </h2>
+          <button (click)="closeZoneManager()" class="text-slate-500 text-2xl leading-none hover:text-slate-800 dark:hover:text-slate-200">&times;</button>
+        </header>
+        
+        <div class="p-4 overflow-y-auto">
+          @if(editingZone(); as zone) {
+            <!-- Zone Editor View -->
+            <div class="space-y-4">
+              <div>
+                <label class="font-semibold text-sm text-slate-600 dark:text-slate-400">Zone Name</label>
+                <input type="text" [value]="zone.name || ''" (input)="onZoneAttributeChange('name', $event.target.value)" placeholder="e.g., Home, Office" class="w-full mt-1 p-2 bg-slate-100 dark:bg-slate-700 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+              
+              <div>
+                <label class="font-semibold text-sm text-slate-600 dark:text-slate-400">Location</label>
+                <div class="text-xs text-slate-500 p-2 bg-slate-100 dark:bg-slate-700 rounded-md mt-1">
+                  Lat: {{ zone.latitude?.toFixed(4) || 'Not set' }}, Lon: {{ zone.longitude?.toFixed(4) || 'Not set' }}
+                </div>
+                <div class="flex gap-2 mt-2">
+                  <button (click)="setZoneLocationFromUser()" class="text-sm p-2 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 flex-1"><i class="fa-solid fa-location-crosshairs mr-2"></i>My Location</button>
+                  <button (click)="setZoneLocationFromMapCenter()" class="text-sm p-2 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 flex-1"><i class="fa-solid fa-map-pin mr-2"></i>Map Center</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="font-semibold text-sm text-slate-600 dark:text-slate-400">Radius: {{ zone.radius }}m</label>
+                <input type="range" min="50" max="1000" step="10" [value]="zone.radius || 50" (input)="onZoneAttributeChange('radius', +$event.target.value)" class="w-full mt-1 accent-indigo-600">
+              </div>
+
+              <div>
+                <h3 class="font-semibold text-sm text-slate-600 dark:text-slate-400 mb-2">Notification Settings</h3>
+                <div class="space-y-2">
+                  <label class="flex items-center p-2 bg-slate-100 dark:bg-slate-700 rounded-lg"><input type="checkbox" [checked]="zone.notifyOnEnter" (change)="onZoneAttributeChange('notifyOnEnter', $event.target.checked)" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500"><span class="ml-3">Notify on <strong>Enter</strong></span></label>
+                  <label class="flex items-center p-2 bg-slate-100 dark:bg-slate-700 rounded-lg"><input type="checkbox" [checked]="zone.notifyOnLeave" (change)="onZoneAttributeChange('notifyOnLeave', $event.target.checked)" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500"><span class="ml-3">Notify on <strong>Leave</strong></span></label>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="font-semibold text-sm text-slate-600 dark:text-slate-400 mb-2">Notify Contacts</h3>
+                <div class="max-h-40 overflow-y-auto space-y-1 p-1">
+                  @for(group of groups(); track group.id) {
+                    <label class="flex items-center p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><input type="checkbox" [checked]="(zone.notificationGroupIds || []).includes(group.id)" (change)="toggleZoneGroup(group.id)" class="h-4 w-4 rounded text-indigo-600"><span class="ml-2 font-bold">{{group.name}} (Group)</span></label>
+                  }
+                  @for(contact of contacts(); track contact.id) {
+                    <label class="flex items-center p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><input type="checkbox" [checked]="(zone.notificationContactIds || []).includes(contact.id)" (change)="toggleZoneContact(contact.id)" class="h-4 w-4 rounded text-indigo-600"><span class="ml-2">{{contact.name}}</span></label>
+                  }
+                </div>
+              </div>
+            </div>
+          } @else {
+            <!-- Zone List View -->
+            <div class="space-y-2">
+              @for(zone of zones(); track zone.id) {
+                <div class="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg flex justify-between items-center">
+                  <div>
+                    <p class="font-semibold text-slate-800 dark:text-slate-200">{{zone.name}}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{zone.radius}}m radius</p>
+                  </div>
+                  <div class="flex gap-1">
+                    <button (click)="editZone(zone)" class="p-2 text-indigo-600 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-md"><i class="fa-solid fa-pen"></i></button>
+                    <button (click)="deleteZone(zone.id)" class="p-2 text-red-500 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-md"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </div>
+              } @empty {
+                <div class="text-center p-8 text-slate-500 dark:text-slate-400">
+                  <i class="fa-solid fa-draw-polygon text-4xl mb-4"></i>
+                  <p>No safety zones created yet.</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <footer class="p-4 border-t border-slate-200 dark:border-slate-700 shrink-0">
+          @if(editingZone()) {
+            <div class="flex gap-2">
+              <button (click)="editingZone.set(null)" class="w-full py-2 bg-slate-200 dark:bg-slate-600 font-bold rounded-lg">Back</button>
+              <button (click)="saveZone()" [disabled]="!editingZone()?.name || !editingZone()?.latitude" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-lg disabled:opacity-50">Save</button>
+            </div>
+          } @else {
+            <button (click)="addNewZone()" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">Add New Zone</button>
+          }
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- SOS Modals -->
+  @if (isAlertSent()) {
+    <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl text-center max-w-sm mx-4">
+        @if (hasEmergencyContacts()) {
+          <i class="fa-solid fa-tower-broadcast text-5xl text-red-500 animate-pulse"></i>
+          <h2 class="text-2xl font-bold mt-4">Sending SOS Alert</h2>
+          <p class="text-slate-600 dark:text-slate-300 mt-2">
+            Alerting <strong class="dark:text-white">{{ sosTarget() }}</strong> and sharing your location in...
+          </p>
+        } @else {
+          <i class="fa-solid fa-phone-volume text-5xl text-red-500 animate-pulse"></i>
+          <h2 class="text-2xl font-bold mt-4">Initiating Emergency Call</h2>
+          <p class="text-slate-600 dark:text-slate-300 mt-2">
+            Calling <strong class="dark:text-white">{{ sosTarget() }}</strong> in...
+          </p>
+        }
+        <p class="text-6xl font-bold my-4 text-slate-800 dark:text-slate-100">{{ sosCountdown() }}</p>
+        <button (click)="cancelSos()" class="w-full bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 font-bold py-3 px-4 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (isSosConfirmationShowing()) {
+    <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-auto border-4 border-green-500">
+        <i class="fa-solid fa-circle-check text-6xl text-green-500"></i>
+        <h2 class="text-3xl font-bold mt-5">Alert Prepared</h2>
+        <p class="text-slate-600 dark:text-slate-300 mt-2 mb-6">
+          Your SOS message and location are ready. Please open your mail app to select your contacts and send the alert.
+        </p>
+        <button (click)="dismissSosConfirmation()" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">
+          Okay
+        </button>
+      </div>
+    </div>
+  }
+  
+  <style>
+    @keyframes fade-in-out {
+      0%, 100% { opacity: 0; transform: translateY(10px) translateX(-50%); }
+      10%, 90% { opacity: 1; transform: translateY(0) translateX(-50%); }
+    }
+    .animate-fade-in-out {
+      animation: fade-in-out 5s ease-in-out forwards;
+    }
+  </style>
+
+</div>

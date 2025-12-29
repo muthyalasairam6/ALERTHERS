@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Copy of Aura Safety",
+  "description": "A personal safety app for women, providing quick access to emergency alerts, location sharing, a fake call feature, and AI-powered safety tips to enhance personal security in any situation.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}

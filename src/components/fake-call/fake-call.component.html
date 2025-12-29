@@ -1,0 +1,81 @@
+<div class="absolute inset-0 bg-black/70 backdrop-blur-xl text-white flex flex-col justify-between items-center p-4 z-50 font-sans">
+  
+  <!-- Fake Status Bar -->
+  <div class="w-full flex justify-between items-center text-sm px-2">
+    <span>{{ currentTime() }}</span>
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-signal"></i>
+      <i class="fa-solid fa-wifi"></i>
+      <i class="fa-solid fa-battery-full"></i>
+    </div>
+  </div>
+
+  @if (callState() === 'incoming') {
+    <!-- Incoming Call UI -->
+    <div class="text-center flex-grow flex flex-col justify-center items-center -mt-10">
+       <h1 class="text-4xl font-semibold">{{ settings().callerName }}</h1>
+       <p class="text-xl text-gray-300 mt-1">iPhone</p>
+    </div>
+
+    <div class="w-full max-w-xs mb-8">
+      <div class="flex justify-between mb-16 text-sm">
+        <div class="flex flex-col items-center opacity-80">
+          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-regular fa-bell text-2xl"></i></div>
+          <span class="mt-2">Remind Me</span>
+        </div>
+        <div class="flex flex-col items-center opacity-80">
+          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-regular fa-message text-2xl"></i></div>
+          <span class="mt-2">Message</span>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <div class="flex flex-col items-center">
+          <button (click)="endCall()" class="bg-red-500 w-20 h-20 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform">
+            <i class="fa-solid fa-phone-slash text-3xl"></i>
+          </button>
+          <span class="mt-2">Decline</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <button (click)="acceptCall()" class="bg-green-500 w-20 h-20 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform">
+            <i class="fa-solid fa-phone text-3xl"></i>
+          </button>
+          <span class="mt-2">Accept</span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Active Call UI -->
+    <div class="w-full flex-grow flex flex-col justify-start pt-20">
+      <div class="text-center">
+        <div class="w-24 h-24 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-user text-5xl"></i>
+        </div>
+        <h1 class="text-4xl font-bold">{{ settings().callerName }}</h1>
+        <p class="text-2xl text-yellow-400 mt-2">{{ formatDuration(callDuration()) }}</p>
+      </div>
+
+      @if(settings().message) {
+        <div class="w-full max-w-md mx-auto bg-black/30 p-4 rounded-lg my-8">
+          <p class="text-lg text-center text-slate-200">
+            {{ settings().message }}
+          </p>
+        </div>
+      }
+    </div>
+
+    <div class="w-full max-w-xs mb-8">
+      <div class="grid grid-cols-3 gap-y-8 text-center text-gray-300">
+        <div class="flex flex-col items-center opacity-50"><i class="fa-solid fa-microphone-slash text-3xl"></i><span class="text-sm mt-1">mute</span></div>
+        <div class="flex flex-col items-center"><i class="fa-solid fa-grip text-3xl"></i><span class="text-sm mt-1">keypad</span></div>
+        <div class="flex flex-col items-center"><i class="fa-solid fa-volume-high text-3xl"></i><span class="text-sm mt-1">speaker</span></div>
+        <div class="flex flex-col items-center opacity-50"><i class="fa-solid fa-plus text-3xl"></i><span class="text-sm mt-1">add call</span></div>
+        <div class="flex flex-col items-center opacity-50"><i class="fa-solid fa-video text-3xl"></i><span class="text-sm mt-1">FaceTime</span></div>
+        <div class="flex flex-col items-center opacity-50"><i class="fa-solid fa-address-book text-3xl"></i><span class="text-sm mt-1">contacts</span></div>
+      </div>
+      <button (click)="endCall()" class="mt-12 bg-red-500 w-20 h-20 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform mx-auto">
+        <i class="fa-solid fa-phone-slash text-3xl"></i>
+      </button>
+    </div>
+  }
+</div>

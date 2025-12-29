@@ -1,0 +1,66 @@
+<div class="h-screen w-screen bg-slate-100 dark:bg-slate-900 flex flex-col font-sans">
+  <!-- Low Battery Banner -->
+  @if (batteryService.isLow() && !batteryService.notificationDismissed()) {
+    <div class="bg-yellow-400 dark:bg-yellow-600 text-black dark:text-white p-3 text-center text-sm font-semibold flex items-center justify-center gap-4 z-50">
+      <i class="fa-solid fa-battery-quarter fa-beat"></i>
+      <span>Your battery is low. Please charge your phone to ensure safety features remain available.</span>
+      <button (click)="batteryService.dismissNotification()" class="text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+  }
+
+  <main class="flex-grow overflow-y-auto">
+    @switch (currentView()) {
+      @case ('home') {
+        <app-home (changeView)="changeView($event)"></app-home>
+      }
+      @case ('sharing') {
+        <app-location-sharing></app-location-sharing>
+      }
+      @case ('contacts') {
+        <app-contacts></app-contacts>
+      }
+      @case ('tips') {
+        <app-tips></app-tips>
+      }
+      @case ('location') {
+        <app-location></app-location>
+      }
+      @case ('fakeCallSettings') {
+        <app-fake-call-settings (changeView)="changeView($event)"></app-fake-call-settings>
+      }
+      @case ('fakeCall') {
+         <app-fake-call (changeView)="changeView('home')"></app-fake-call>
+      }
+      @case ('aiWatch') {
+        <app-ai-watch (changeView)="changeView($event)"></app-ai-watch>
+      }
+    }
+  </main>
+  
+  @if (currentView() !== 'fakeCall' && currentView() !== 'fakeCallSettings' && currentView() !== 'aiWatch') {
+    <nav class="bg-white dark:bg-slate-800 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)]">
+      <div class="max-w-md mx-auto px-2">
+        <div class="flex justify-around items-center h-16">
+          @for (item of navItems; track item.view) {
+            <button (click)="changeView(item.view)" 
+                    class="relative flex flex-col items-center justify-center w-1/5 h-full transition-colors text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    [class.text-indigo-600]="currentView() === item.view"
+                    [class.dark:text-indigo-400]="currentView() === item.view"
+                    >
+              @if (currentView() === item.view) {
+                <span class="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-indigo-600 dark:bg-indigo-400 rounded-b-full"></span>
+              }
+              @if (item.view === 'sharing' && isSharingLocation()) {
+                <span class="absolute top-2 right-1/2 translate-x-4 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-slate-800"></span>
+              }
+              <i class="fa-solid {{ item.icon }} text-xl"></i>
+              <span class="text-xs mt-1 font-medium">{{ item.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </nav>
+  }
+</div>

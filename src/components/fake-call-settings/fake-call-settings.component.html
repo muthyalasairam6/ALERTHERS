@@ -1,0 +1,56 @@
+<div class="p-6 bg-slate-100 dark:bg-slate-900 min-h-full">
+  <header class="mb-6 flex items-center">
+     <button (click)="goBack()" class="mr-4 text-slate-600 dark:text-slate-300 hover:text-indigo-500">
+      <i class="fa-solid fa-arrow-left text-2xl"></i>
+    </button>
+    <div>
+        <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-200">Fake Call Setup</h1>
+        <p class="text-slate-500 dark:text-slate-400">Customize the incoming call.</p>
+    </div>
+  </header>
+
+  <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg">
+    <div class="space-y-6">
+      <div>
+        <label for="callerName" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Caller Name</label>
+        <input 
+          type="text" 
+          id="callerName"
+          placeholder="e.g., Mom, Work"
+          [value]="callerName()"
+          (input)="onInput('callerName', $event)"
+          class="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-slate-800 dark:text-slate-200"
+        />
+      </div>
+      <div>
+        <label for="callerNumber" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Caller Number (Optional)</label>
+        <input 
+          type="tel" 
+          id="callerNumber"
+          placeholder="(555) 123-4567"
+          [value]="callerNumber()"
+          (input)="onInput('callerNumber', $event)"
+          class="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-slate-800 dark:text-slate-200"
+        />
+      </div>
+       <div>
+        <label for="message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Call Script (What to say)</label>
+        <textarea
+          id="message"
+          rows="4"
+          placeholder="Write a short script here..."
+          [value]="message()"
+          (input)="onInput('message', $event)"
+          class="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-slate-800 dark:text-slate-200"
+        ></textarea>
+      </div>
+      <button 
+        (click)="startCall()" 
+        [disabled]="!callerName()"
+        class="w-full bg-green-600 text-white font-bold py-4 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:bg-green-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+      >
+        <i class="fa-solid fa-phone-volume mr-3"></i>Start Call Now
+      </button>
+    </div>
+  </div>
+</div>
